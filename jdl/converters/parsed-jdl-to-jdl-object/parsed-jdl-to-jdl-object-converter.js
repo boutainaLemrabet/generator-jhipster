@@ -123,7 +123,7 @@ function getJDLFieldsFromParsedEntity(entity) {
     for (let i = 0; i < entity.body.length; i++) {
         const field = entity.body[i];
         const fieldName = lowerFirst(field.name);
-        if (fieldName.toLowerCase() === 'id') {
+        if (fieldName.toLowerCase() === 'id' && !field.annotations.some(a => a.optionName === 'id')) {
             continue; // eslint-disable-line no-continue
         }
         const jdlField = convertField(field);

@@ -17,8 +17,9 @@
  limitations under the License.
 -%>
 <%_
-const tsKeyId = generateTestEntityId(primaryKeyType);
+const tsKeyId = generateTestEntityId(primaryKey);
 const entityArrayOptionalChainSymbol = pagination === 'infinite-scroll' ? '' : '?.';
+const testEntity = generateTestEntity(primaryKey);
 _%>
 <%_ if (pagination !== 'no' || searchEngine !== false) { _%>
 jest.mock('@angular/router');
@@ -36,7 +37,6 @@ import { of } from 'rxjs';
 
 import { <%= entityAngularName %>Component } from 'app/entities/<%= entityFolderName %>/<%= entityFileName %>.component';
 import { <%= entityAngularName %>Service } from 'app/entities/<%= entityFolderName %>/<%= entityFileName %>.service';
-import { <%= entityAngularName %> } from 'app/shared/model/<%= entityModelFileName %>.model';
 
 describe('Component Tests', () => {
     describe('<%= entityAngularName %> Management Component', () => {
@@ -55,13 +55,13 @@ describe('Component Tests', () => {
                         provide: ActivatedRoute,
                         useValue: {
                             data: of({
-                                defaultSort: 'id,asc',
+                                defaultSort: '<% if (primaryKey.length === 1) { %><%= primaryKeyName %>,asc<% } %>',
                             }),
                             queryParamMap: of(
                                 jest.requireActual('@angular/router').convertToParamMap({
                                     page: '1',
                                     size: '1',
-                                    sort: 'id,desc',
+                                    sort: '<% if (primaryKey.length === 1) { %><%= primaryKeyName %>,desc<% } %>',
                                 })
                             ),
                             <%_ if (searchEngine !== false) { _%>
@@ -91,7 +91,7 @@ describe('Component Tests', () => {
             // GIVEN
             const headers = new HttpHeaders().append('link', 'link;link');
             spyOn(service, 'query').and.returnValue(of(new HttpResponse({
-                body: [new <%= entityAngularName %>(<%- tsKeyId %>)],
+                body: [<%- testEntity %>],
                 headers
             })));
 
@@ -100,7 +100,7 @@ describe('Component Tests', () => {
 
             // THEN
             expect(service.query).toHaveBeenCalled();
-            expect(comp.<%= entityInstancePlural %><%= entityArrayOptionalChainSymbol %>[0]).toEqual(jasmine.objectContaining({ id: <%- tsKeyId %> }));
+            expect(comp.<%= entityInstancePlural %><%= entityArrayOptionalChainSymbol %>[0]).toEqual(jasmine.objectContaining(<%- testEntity %>));
         });
 
     <%_ if (pagination !== 'no') { _%>
@@ -110,18 +110,19 @@ describe('Component Tests', () => {
             spyOn(service, 'query').and.returnValue(
                 of(
                     new HttpResponse({
-                        body: [new <%= entityAngularName %>(<%- tsKeyId %>)],
+                        body: [<%- testEntity %>],
                         headers
                     })
                 )
             );
 
             // WHEN
+            comp.ngOnInit();
             comp.loadPage(1);
 
             // THEN
             expect(service.query).toHaveBeenCalled();
-            expect(comp.<%= entityInstancePlural %><%= entityArrayOptionalChainSymbol %>[0]).toEqual(jasmine.objectContaining({ id: <%- tsKeyId %> }));
+            expect(comp.<%= entityInstancePlural %><%= entityArrayOptionalChainSymbol %>[0]).toEqual(jasmine.objectContaining(<%- testEntity %>));
         });
 
         <%_ if (pagination === 'infinite-scroll') { _%>
@@ -132,7 +133,7 @@ describe('Component Tests', () => {
             spyOn(service, 'query').and.returnValue(
                 of(
                     new HttpResponse({
-                        body: [new <%= entityAngularName %>(<%- tsKeyId %>)],
+                        body: [<%- testEntity %>],
                         headers
                     })
                 )
@@ -145,7 +146,7 @@ describe('Component Tests', () => {
             // THEN
             expect(comp.page).toEqual(0);
             expect(service.query).toHaveBeenCalledTimes(2);
-            expect(comp.<%= entityInstancePlural %>[0]).toEqual(jasmine.objectContaining({ id: <%- tsKeyId %> }));
+            expect(comp.<%= entityInstancePlural %>[0]).toEqual(jasmine.objectContaining(<%- testEntity %>));
         });
 
         it('should calculate the sort attribute for an id', () => {
@@ -154,7 +155,7 @@ describe('Component Tests', () => {
             const result = comp.sort();
 
             // THEN
-            expect(result).toEqual(['id,asc']);
+            expect(result).toEqual([<% if (primaryKey.length === 1) { %>'<%= primaryKeyName %>,asc'<% } %>]);
         });
 
         it('should calculate the sort attribute for a non-id attribute', () => {
@@ -168,7 +169,7 @@ describe('Component Tests', () => {
             const result = comp.sort();
 
             // THEN
-                expect(result).toEqual(['name,asc', 'id']);
+                expect(result).toEqual(['name,asc', '<%= primaryKeyName %>']);
         });
 
         <%_ } else { _%>
@@ -179,7 +180,7 @@ describe('Component Tests', () => {
             const result = comp.sort();
 
             // THEN
-            expect(result).toEqual(['id,desc']);
+            expect(result).toEqual([<% if (primaryKey.length === 1) { %>'<%= primaryKeyName %>,desc'<% } %>]);
         });
 
         it('should calculate the sort attribute for a non-id attribute', () => {
@@ -188,12 +189,15 @@ describe('Component Tests', () => {
 
             // GIVEN
             comp.predicate = 'name';
+            <%_ if (primaryKey.length > 1) { _%>
+            comp.ascending = false;
+            <%_ } _%>
 
             // WHEN
             const result = comp.sort();
 
             // THEN
-            expect(result).toEqual(['name,desc', 'id']);
+            expect(result).toEqual(['name,desc'<% if (primaryKey.length === 1) { %>, '<%= primaryKeyName %>'<% } %>]);
         });
 
         <%_ } _%>

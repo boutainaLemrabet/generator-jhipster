@@ -230,12 +230,24 @@ describe('ParsedJDLToJDLObjectConverter', () => {
                     });
                 });
 
-                it('should not add it', () => {
+                it('should not add it if it does not have the id annotation', () => {
                     expect(jdlObject.entities.A).to.deep.eq(
                         new JDLEntity({
                             name: 'A',
                             tableName: 'A',
                             fields: {
+                                email: new JDLField({ name: 'email', type: FieldTypes.STRING }),
+                            },
+                        })
+                    );
+                });
+                it('should add it if it has the id annotation', () => {
+                    expect(jdlObject.entities.B).to.deep.eq(
+                        new JDLEntity({
+                            name: 'B',
+                            tableName: 'B',
+                            fields: {
+                                id: new JDLField({ name: 'id', type: FieldTypes.STRING, options: { id: true } }),
                                 email: new JDLField({ name: 'email', type: FieldTypes.STRING }),
                             },
                         })

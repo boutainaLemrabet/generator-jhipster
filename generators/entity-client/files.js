@@ -93,6 +93,14 @@ const angularFiles = {
             path: ANGULAR_DIR,
             templates: [
                 {
+                    file: 'entities/entity-management-update.component.ts',
+                    renameTo: generator => `entities/${generator.entityFolderName}/${generator.entityFileName}-update.component.ts`,
+                },
+                {
+                    file: 'entities/entity-management-delete-dialog.component.ts',
+                    renameTo: generator => `entities/${generator.entityFolderName}/${generator.entityFileName}-delete-dialog.component.ts`,
+                },
+                {
                     file: 'entities/entity-management-update.component.html',
                     method: 'processHtml',
                     template: true,
@@ -104,14 +112,6 @@ const angularFiles = {
                     template: true,
                     renameTo: generator =>
                         `entities/${generator.entityFolderName}/${generator.entityFileName}-delete-dialog.component.html`,
-                },
-                {
-                    file: 'entities/entity-management-update.component.ts',
-                    renameTo: generator => `entities/${generator.entityFolderName}/${generator.entityFileName}-update.component.ts`,
-                },
-                {
-                    file: 'entities/entity-management-delete-dialog.component.ts',
-                    renameTo: generator => `entities/${generator.entityFolderName}/${generator.entityFileName}-delete-dialog.component.ts`,
                 },
             ],
         },

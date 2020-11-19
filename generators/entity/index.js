@@ -27,7 +27,7 @@ const BaseBlueprintGenerator = require('../generator-base-blueprint');
 const constants = require('../generator-constants');
 const statistics = require('../statistics');
 const { isReservedClassName, isReservedTableName } = require('../../jdl/jhipster/reserved-keywords');
-const { prepareEntityForTemplates, loadRequiredConfigIntoEntity } = require('../../utils/entity');
+const { prepareEntityForTemplates, loadRequiredConfigIntoEntity, computePrimaryKeyIfNotComputed } = require('../../utils/entity');
 const { prepareFieldForTemplates } = require('../../utils/field');
 const { prepareRelationshipForTemplates } = require('../../utils/relationship');
 const { stringify } = require('../../utils');
@@ -518,7 +518,6 @@ class EntityGenerator extends BaseBlueprintGenerator {
                 this.context.fields.forEach(field => {
                     prepareFieldForTemplates(entity, field, this);
                 });
-                this.context.fieldsNoId = this.context.fields.filter(field => !field.id);
             },
 
             loadRelationships() {
@@ -532,6 +531,10 @@ class EntityGenerator extends BaseBlueprintGenerator {
                     otherEntity.otherRelationships = otherEntity.otherRelationships || [];
                     otherEntity.otherRelationships.push(relationship);
                 });
+            },
+
+            computePrimaryKeyIfNotComputed() {
+                computePrimaryKeyIfNotComputed(this.context, this);
             },
         };
     }
@@ -548,19 +551,6 @@ class EntityGenerator extends BaseBlueprintGenerator {
                 this.context.relationships.forEach(relationship => {
                     prepareRelationshipForTemplates(this.context, relationship, this);
                 });
-            },
-
-            processDerivedPrimaryKey() {
-                if (!this.context.derivedPrimaryKey) {
-                    return;
-                }
-                this.context.primaryKey = this.context.derivedPrimaryKey.otherEntity.primaryKey;
-                this.context.primaryKeyType = this.context.derivedPrimaryKey.otherEntity.primaryKeyType;
-                const idFields = this.context.derivedPrimaryKey.otherEntity.idFields.map(field => {
-                    return { ...field, fieldName: 'id', fieldNameHumanized: 'ID' };
-                });
-                this.context.idFields = idFields;
-                this.context.fields.unshift(...idFields);
             },
 
             prepareReferences() {

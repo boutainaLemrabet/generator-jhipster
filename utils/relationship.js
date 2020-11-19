@@ -28,8 +28,7 @@ function prepareRelationshipForTemplates(entityWithConfig, relationship, generat
     const jhiTablePrefix = entityWithConfig.jhiTablePrefix || generator.getTableName(entityWithConfig.jhiPrefix);
 
     _.defaults(relationship, {
-        // otherEntityField should be id if not specified
-        otherEntityField: 'id',
+        otherEntityFields: [],
         // let ownerSide true when type is 'many-to-one' for convenience.
         // means that this side should control the reference.
         ownerSide:
@@ -45,8 +44,30 @@ function prepareRelationshipForTemplates(entityWithConfig, relationship, generat
 
     relationship.otherEntityIsEmbedded = otherEntityData.embedded;
 
-    if (relationship.otherEntity) {
-        relationship.otherEntityPrimaryKeyType = relationship.otherEntity.primaryKeyType;
+    relationship.otherEntityPrimaryKeyType = relationship.otherEntity.primaryKeyType;
+    if (!relationship.otherEntityField) {
+        relationship.otherEntityField = relationship.otherEntity.primaryKey.length === 1 ? relationship.otherEntity.primaryKeyName : 'id';
+    }
+    relationship.mapperName = relationship.otherEntityField + (relationship.collection ? 'Set' : '');
+
+    // only the case of owner side we need to compute the other otherEntityFields to send them to front end
+    if (relationship.ownerSide) {
+        if (relationship.otherEntityField) {
+            const field = relationship.otherEntity.fields.find(field => field.fieldName === relationship.otherEntityField);
+            if (field) {
+                relationship.otherEntityFields.push({
+                    field,
+                    usedRelationships: [relationship],
+                });
+            }
+        }
+        otherEntityData.relationships
+            .filter(r => r.id) // Only many-to-one (no one-to-one) since otherEntityField is enough in that case
+            .forEach(r =>
+                relationship.otherEntityFields.push(
+                    ...r.otherEntityFields.map(f => ({ field: f.field, usedRelationships: [r, ...f.usedRelationships] }))
+                )
+            );
     }
 
     // Look for fields at the other other side of the relationship
@@ -112,10 +133,6 @@ function prepareRelationshipForTemplates(entityWithConfig, relationship, generat
             generator.debug(`Entity ${entityName}: Could not find the other side of the relationship ${stringify(relationship)}`);
         }
         relationship.otherRelationship = otherRelationship;
-    }
-
-    if (relationship.otherEntity && relationship.otherEntityField && relationship.otherEntityField !== 'id') {
-        relationship.relatedField = relationship.otherEntity.fields.find(field => field.fieldName === relationship.otherEntityField);
     }
 
     if (relationship.otherEntityRelationshipName !== undefined) {

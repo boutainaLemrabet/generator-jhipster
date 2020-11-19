@@ -36,15 +36,15 @@ const <%= entityInstance %>Route: Routes = [
         component: <%= entityAngularName %>Component,
         data: {
             authorities: [Authority.USER],
-            <%_ if (pagination === 'pagination') { _%>
-            defaultSort: 'id,asc',
+            <%_ if (pagination !== 'no') { _%>
+            defaultSort: '<% if (primaryKey.length === 1) { %><%= primaryKeyName %>,asc<% } %>',
             <%_ } _%>
             pageTitle: <% if (enableTranslation) { %>'<%= i18nKeyPrefix %>.home.title'<% } else { %>'<%= entityClassPlural %>'<% } %>
         },
         canActivate: [UserRouteAccessService]
     },
     {
-        path: ':id/view',
+        path: '<% if (primaryKey.length === 1) { %>:<%= primaryKeyName %>/<% } %>view',
         component: <%= entityAngularName %>DetailComponent,
         resolve: {
             <%= entityInstance %>: <%= entityAngularName %>RoutingResolveService
@@ -69,7 +69,7 @@ const <%= entityInstance %>Route: Routes = [
         canActivate: [UserRouteAccessService]
     },
     {
-        path: ':id/edit',
+        path: '<% if (primaryKey.length === 1) { %>:<%= primaryKeyName %>/<% } %>edit',
         component: <%= entityAngularName %>UpdateComponent,
         resolve: {
             <%= entityInstance %>: <%= entityAngularName %>RoutingResolveService

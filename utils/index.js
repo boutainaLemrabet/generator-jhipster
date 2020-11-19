@@ -28,11 +28,14 @@ module.exports = {
                 if (key === 'faker') {
                     return '[faker]';
                 }
-                if (key === 'otherEntity') {
+                if (key === 'otherEntity' || key === 'entity') {
                     return `[${value.name} Entity]`;
                 }
                 if (key === 'otherRelationship') {
                     return `[${value.relationshipName} relationship]`;
+                }
+                if (key === 'otherEntityFields') {
+                    return `[${value.relationshipName} fields]`;
                 }
                 return value;
             },

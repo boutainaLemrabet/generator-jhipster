@@ -41,7 +41,7 @@ const { languageToJavaLanguage } = require('./utils');
 const { prettierTransform, generatedAnnotationTransform } = require('./generator-transforms');
 const JSONToJDLEntityConverter = require('../jdl/converters/json-to-jdl-entity-converter');
 const JSONToJDLOptionConverter = require('../jdl/converters/json-to-jdl-option-converter');
-const { prepareEntityForTemplates, loadRequiredConfigIntoEntity } = require('../utils/entity');
+const { prepareEntityForTemplates, loadRequiredConfigIntoEntity, computePrimaryKeyIfNotComputed } = require('../utils/entity');
 const { prepareFieldForTemplates } = require('../utils/field');
 const { formatDateForChangelog } = require('../utils/liquibase');
 
@@ -867,18 +867,33 @@ module.exports = class JHipsterBasePrivateGenerator extends Generator {
         const queries = [];
         const variables = [];
         const selectableEntities = [];
-        const selectableManyToManyEntities = [];
+        const selectableManyToManyEntities = new Map(); // Map<string, Set<Relationship>>
+        const trackBys = new Map(); // Map<string, { itemTypes: Set<string>; returnTypes: Set<string>, value: Relationship }>
         let rxjsMapIsUsed = false;
         relationships.forEach(relationship => {
             const relationshipType = relationship.relationshipType;
             const ownerSide = relationship.ownerSide;
             const otherEntityName = relationship.otherEntityName;
             const selectableEntityType = `I${relationship.otherEntityAngularName}`;
+            let trackByKey;
+            let trackByValue;
+            let trackByReturnType;
             let query;
             let variableName;
             let filter;
-            if (relationshipType === 'many-to-many' && ownerSide === true && !selectableManyToManyEntities.includes(selectableEntityType)) {
-                selectableManyToManyEntities.push(selectableEntityType);
+            if (relationshipType === 'many-to-many' && ownerSide === true) {
+                // && !selectableManyToManyEntities.includes(relationship.entity)
+                let getSelectedSuffix;
+                if (relationship.otherEntity.primaryKey.length > 1) {
+                    getSelectedSuffix = _.upperFirst(relationship.otherEntityName);
+                } else {
+                    getSelectedSuffix = `By${_.upperFirst(relationship.otherEntity.primaryKeyName)}`;
+                }
+                if (!selectableManyToManyEntities.has(getSelectedSuffix)) {
+                    selectableManyToManyEntities.set(getSelectedSuffix, new Set());
+                }
+                selectableManyToManyEntities.get(getSelectedSuffix).add(relationship);
+                relationship.getSelectedSuffix = getSelectedSuffix;
             }
             if (
                 relationshipType === 'many-to-one' ||
@@ -887,6 +902,22 @@ module.exports = class JHipsterBasePrivateGenerator extends Generator {
             ) {
                 if (!selectableEntities.includes(selectableEntityType)) {
                     selectableEntities.push(selectableEntityType);
+                    if (relationship.otherEntity.primaryKey.length > 1) {
+                        trackByKey = `${relationship.otherEntityNameCapitalized}Id`;
+                        trackByValue = `\`${relationship.otherEntity.primaryKey
+                            .map(pk => `\${item.${pk.nameDottedAsserted}}`)
+                            .join(',')}\``;
+                        trackByReturnType = 'string';
+                    } else {
+                        trackByKey = _.upperFirst(relationship.otherEntity.primaryKeyName);
+                        trackByValue = `item.${relationship.otherEntity.primaryKeyName}!`;
+                        trackByReturnType = this.getTypescriptKeyType(relationship.otherEntity.primaryKeyType);
+                    }
+                    if (!trackBys.has(trackByKey)) {
+                        trackBys.set(trackByKey, { itemTypes: new Set(), returnTypes: new Set(), value: trackByValue });
+                    }
+                    trackBys.get(trackByKey).itemTypes.add(selectableEntityType);
+                    trackBys.get(trackByKey).returnTypes.add(trackByReturnType);
                 }
                 if (relationshipType === 'one-to-one' && ownerSide === true && otherEntityName !== 'user') {
                     rxjsMapIsUsed = true;
@@ -937,6 +968,7 @@ module.exports = class JHipsterBasePrivateGenerator extends Generator {
             rxjsMapIsUsed,
             selectableEntities,
             selectableManyToManyEntities,
+            trackBys,
         };
     }
 
@@ -969,10 +1001,16 @@ module.exports = class JHipsterBasePrivateGenerator extends Generator {
      * @returns {string} primary key type in Typescript
      */
     getTypescriptKeyType(pkType) {
-        if (pkType === 'String' || pkType === 'UUID') {
-            return 'string';
+        if (['Integer', 'Long', 'Float', 'Double', 'BigDecimal', 'Duration'].includes(pkType)) {
+            return 'number';
         }
-        return 'number';
+        if (pkType === 'Boolean') {
+            return 'boolean';
+        }
+        if (['LocalDate', 'Instant', 'ZonedDateTime'].includes(pkType)) {
+            return 'Date';
+        }
+        return 'string';
     }
 
     /**
@@ -1203,11 +1241,30 @@ module.exports = class JHipsterBasePrivateGenerator extends Generator {
      *
      * @param {any} pkType - the type of the primary key
      */
-    generateTestEntityId(pkType) {
-        if (pkType === 'String') {
+    generateTestEntityId(primaryKey) {
+        if (typeof primaryKey === 'string') {
+            return this.fieldTypeToTsTestValue(primaryKey);
+        }
+        return primaryKey.map(pk => this.fieldTypeToTsTestValue(pk.field.fieldType)).join(', ');
+    }
+
+    generateTestEntity(primaryKey) {
+        let res;
+        primaryKey.forEach(pk => {
+            let idPart = { [pk.field.fieldName]: this.fieldTypeToTsTestValue(pk.field.fieldType) };
+            [...pk.usedRelationships].reverse().forEach(r => {
+                idPart = { [r.relationshipName]: idPart };
+            });
+            res = _.merge(res, idPart);
+        });
+        return JSON.stringify(res);
+    }
+
+    fieldTypeToTsTestValue(fieldType) {
+        if (fieldType === 'String') {
             return "'123'";
         }
-        if (pkType === 'UUID') {
+        if (fieldType === 'UUID') {
             return "'9fec3727-3421-4967-b213-ba36557ca194'";
         }
         return 123;
@@ -1234,6 +1291,99 @@ module.exports = class JHipsterBasePrivateGenerator extends Generator {
                 break;
         }
         return pk;
+    }
+
+    /**
+     * add the id field if needed
+     *
+     * @param {string} databaseType - the database type
+     * @param {any} entity - the entity to compute the database type for
+     */
+    initIdField(entity, databaseType) {
+        if (entity.compositeId !== undefined) {
+            return; // idField already initialized
+        }
+        const idFields = entity.fields.filter(field => field.id);
+        const idRelationships = entity.relationships.filter(r => r.options && r.options.id && r.relationshipType === 'many-to-one');
+        const derivedRelationship = entity.relationships.find(
+            r => r.useJPADerivedIdentifier || (r.options && r.options.id && r.relationshipType === 'one-to-one' && r.ownerSide)
+        );
+        const idLength = idFields.length + idRelationships.length;
+        if (idLength && derivedRelationship) {
+            throw new Error('an entity can not have and id and a jpaDerived identifier');
+        }
+        if (derivedRelationship && derivedRelationship.compositeId === undefined) {
+            derivedRelationship.otherEntity = this.configOptions.sharedEntities[_.upperFirst(derivedRelationship.otherEntityName)];
+            this.initIdField(derivedRelationship.otherEntity, databaseType);
+            entity.compositeId = derivedRelationship.otherEntity.compositeId;
+            entity.primaryKeyType = derivedRelationship.otherEntity.primaryKeyType;
+            entity.primaryKeyName = `${derivedRelationship.relationshipName}${_.upperFirst(
+                derivedRelationship.otherEntity.primaryKeyName
+            )}`;
+            if (!entity.compositeId) {
+                const idField = {
+                    fieldName: entity.primaryKeyName,
+                    fieldType: entity.primaryKeyType,
+                    id: true,
+                    options: {
+                        id: true,
+                    },
+                    autoIncrement: true,
+                    derivedId: true, // relationship is used instead
+                    derivedRelationship,
+                    fieldNameAsDatabaseColumn: `${this.getColumnName(derivedRelationship.relationshipName)}_${
+                        derivedRelationship.otherEntity.primaryKey[0].field.fieldNameAsDatabaseColumn
+                    }`, // fieldNameAsDatabaseColumn is calculatedHere to avoid problems when EntityName ends with CapitalLetter
+                };
+                entity.fields.unshift(idField);
+            }
+        } else if (idLength === 0) {
+            entity.compositeId = false;
+            entity.primaryKeyType = this.getPkType(entity.databaseType);
+            entity.primaryKeyName = 'id';
+            const idField = {
+                fieldName: entity.primaryKeyName,
+                fieldType: entity.primaryKeyType,
+                id: true,
+                options: {
+                    id: true,
+                },
+                autoIncrement: true,
+            };
+            entity.fields.unshift(idField);
+        } else if (idLength > 1) {
+            entity.compositeId = true;
+            entity.primaryKeyType = `${_.upperFirst(entity.name)}Id`;
+            entity.primaryKeyName = 'id';
+        } else if (idFields.length === 1) {
+            entity.compositeId = false;
+            entity.primaryKeyType = idFields[0].fieldType;
+            entity.primaryKeyName = idFields[0].fieldName;
+        } else if (idRelationships.length === 1) {
+            throw new Error('a ManyToOne relationship can not be the unique id of an entity');
+        } else {
+            throw new Error('This should never happen (FAIL SAFE)');
+        }
+    }
+
+    /**
+     * Returns the JDBC URL for a databaseType
+     *
+     * @param {string} databaseType
+     * @param {*} options
+     */
+    getJDBCUrl(databaseType, options = {}) {
+        return this.getDBCUrl(databaseType, 'jdbc', options);
+    }
+
+    /**
+     * Returns the R2DBC URL for a databaseType
+     *
+     * @param {string} databaseType
+     * @param {*} options
+     */
+    getR2DBCUrl(databaseType, options = {}) {
+        return this.getDBCUrl(databaseType, 'r2dbc', options);
     }
 
     /**
@@ -1683,10 +1833,15 @@ module.exports = class JHipsterBasePrivateGenerator extends Generator {
                 fieldTranslationKey: 'global.field.id',
                 fieldNameHumanized: 'ID',
                 id: true,
+                autoIncrement: true,
+                columnType: userIdType === 'String' ? 'varchar(100)' : 'bigint',
+                loadColumnType: userIdType === 'String' ? 'string' : 'numeric',
             },
             {
                 fieldName: 'login',
                 fieldType: 'String',
+                columnType: 'varchar(50)',
+                loadColumnType: 'string',
             },
         ];
 
@@ -1694,6 +1849,7 @@ module.exports = class JHipsterBasePrivateGenerator extends Generator {
         user.fields.forEach(field => {
             prepareFieldForTemplates(user, field, this);
         });
+        computePrimaryKeyIfNotComputed(user, this);
         this.configOptions.sharedEntities.User = user;
     }
 
