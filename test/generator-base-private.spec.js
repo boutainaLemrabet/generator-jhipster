@@ -173,9 +173,9 @@ export * from './entityFolderName/entityFileName.state';`;
         });
         describe('when called with String', () => {
             it("return '123'", () => {
-                expect(BaseGenerator.generateTestEntityId([{ field: { fieldType: 'String' } }, { field: { fieldType: 'Long' } }])).to.equal(
-                    "'123', 123"
-                );
+                expect(
+                    BaseGenerator.generateTestEntityId({ ids: [{ field: { fieldType: 'String' } }, { field: { fieldType: 'Long' } }] })
+                ).to.equal("'123', 123");
             });
         });
     });

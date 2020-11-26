@@ -37,6 +37,9 @@ module.exports = {
                 if (key === 'otherEntityFields') {
                     return `[${value.relationshipName} fields]`;
                 }
+                if (key === 'reference') {
+                    return '[reference]';
+                }
                 return value;
             },
             4

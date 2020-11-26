@@ -33,9 +33,9 @@ for (idx in relationships) {
     const relationshipType = relationships[idx].relationshipType
     if (
         (relationshipType === "many-to-one" || (relationshipType === "one-to-one" && relationships[idx].ownerSide === true)) &&
-            ((relationships[idx].relationshipValidate === true && relationships[idx].relationshipRequired) || relationships[idx].useJPADerivedIdentifier)
+            ((relationships[idx].relationshipValidate === true && relationships[idx].relationshipRequired) || relationships[idx].id)
     ) {
-        relationships[idx].otherEntity.primaryKey.forEach(pk => {
+        relationships[idx].otherEntity.primaryKey.ids.forEach(pk => {
             header.push(`${getColumnName(relationships[idx].relationshipName)}_${pk.columnName}`);
         })
     }
@@ -45,7 +45,7 @@ table.push(header);
 // Set number of rows to be generated
 let numberOfRows = 10;
 for (idx in relationships) {
-    if ( relationships[idx].useJPADerivedIdentifier === true ) {
+    if ( relationships[idx].id && relationships[idx].relationshipType === 'one-to-one' ) {
         const otherEntityNameCapitalized = relationships[idx].otherEntityNameCapitalized;
         if (otherEntityNameCapitalized === 'User') {
             // Only few user records are generated
@@ -86,10 +86,10 @@ for (lineNb = 1; lineNb <= numberOfRows; lineNb++) {
         const relationshipType = relationships[idx].relationshipType;
         if (
             (relationshipType === "many-to-one" || (relationshipType === "one-to-one" && relationships[idx].ownerSide === true)) &&
-                ((relationships[idx].relationshipValidate === true && relationships[idx].relationshipRequired)|| relationships[idx].id || relationships[idx].useJPADerivedIdentifier)
+                ((relationships[idx].relationshipValidate === true && relationships[idx].relationshipRequired)|| relationships[idx].id)
         ) {
             if (relationships[idx].otherEntityNameCapitalized === 'User') {
-                if (relationships[idx].useJPADerivedIdentifier) {
+                if (relationships[idx].id && relationships[idx].relationshipType === 'one-to-one') {
                     if (lineNb <= 2) {
                         line.push(lineNb);
                     } else {
@@ -99,7 +99,7 @@ for (lineNb = 1; lineNb <= numberOfRows; lineNb++) {
                     line.push(entity.faker.random.number({min: 1, max: 2}));
                 }
             } else {
-                relationships[idx].otherEntity.primaryKey.forEach(() => {
+                relationships[idx].otherEntity.primaryKey.ids.forEach(() => {
                     line.push(lineNb);
                 })
             }

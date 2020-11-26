@@ -46,7 +46,7 @@ module.exports = class extends BaseBlueprintGenerator {
     _preparing() {
         return {
             setup() {
-                this.tsKeyType = this.getTypescriptKeyType(this.primaryKeyType);
+                this.tsKeyType = this.getTypescriptKeyType(this.primaryKey.type);
             },
         };
     }

@@ -52,7 +52,7 @@ for (idx in relationships) {
     if (relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true)) {
         renMapAnotEnt = true;
 _%>
-    @Mapping(target = "<%= relationships[idx].relationshipFieldName %>", source = "<%= relationships[idx].relationshipFieldName %>", qualifiedByName="<%= relationships[idx].otherEntityField || relationships[idx].otherEntity.primaryKeyName %>")
+    @Mapping(target = "<%= relationships[idx].relationshipFieldName %>", source = "<%= relationships[idx].relationshipFieldName %>", qualifiedByName="<%= relationships[idx].otherEntityField || relationships[idx].otherEntity.primaryKey.name %>")
     <%_ } _%>
 <%_ } _%>
     <%_ if (renMapAnotEnt === true) { _%>
@@ -65,9 +65,9 @@ _%>
 if (!embedded) {
 // DTO -> entity mapping
 var renMapAnotDto = false;  //Render Mapping Annotation during DTO to Entity conversion?
-if(primaryKey.length > 1) {
+if(primaryKey.ids.length > 1) {
     renMapAnotDto = true;
-    primaryKey.forEach(pk => { _%>
+    primaryKey.ids.forEach(pk => { _%>
     @Mapping(target = "id.<%= pk.name %>", source = "<%= [...pk.usedRelationships.map(r => r.relationshipName), pk.field.fieldName].join('.') %>")
     <%_ })
 }

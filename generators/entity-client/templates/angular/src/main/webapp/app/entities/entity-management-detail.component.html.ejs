@@ -60,10 +60,12 @@
                     <%_ } _%>
                 </dd>
                 <%_ } _%>
-                <%_
-                for (idx in relationships) {
-                    const relationshipType = relationships[idx].relationshipType;
-                    const ownerSide = relationships[idx].ownerSide;
+            <%_ for (idx in relationships) {
+                const relationshipType = relationships[idx].relationshipType;
+                const ownerSide = relationships[idx].ownerSide;
+                if (relationshipType === 'many-to-one'
+                        || (relationshipType === 'one-to-one' && ownerSide === true)
+                        || (relationshipType === 'many-to-many' && ownerSide === true)) {
                     const relationshipName = relationships[idx].relationshipName;
                     const relationshipFieldName = relationships[idx].relationshipFieldName;
                     const relationshipFieldNamePlural = relationships[idx].relationshipFieldNamePlural;
@@ -72,12 +74,9 @@
                     const otherEntityStateName = relationships[idx].otherEntityStateName;
                     const otherEntity = relationships[idx].otherEntity;
                     const instance = relationshipType === 'many-to-many' ? relationshipFieldName : `${entityInstance}!.${relationshipFieldName}`;
-                    const relationshipKeys = otherEntity.primaryKey.length === 1 ? `${instance}!.${otherEntity.primaryKeyName}!` : `{ ${otherEntity.primaryKey.map(pk => `${pk.name}: ${instance}!.${pk.nameDottedAsserted}`).join(', ')} }`;
+                    const relationshipKeys = otherEntity.primaryKey.ids.length === 1 ? `${instance}!.${otherEntity.primaryKey.name}!` : `{ ${otherEntity.primaryKey.ids.map(pk => `${pk.name}: ${instance}!.${pk.nameDottedAsserted}`).join(', ')} }`;
                     const routerLink = `[routerLink]="['/${ otherEntityStateName }', ${ relationshipKeys }, 'view']"`;
                     const label = relationships[idx].otherEntityFields.map(f => `{{ ${[instance, ...f.usedRelationships.slice(1).map(r2 => r2.relationshipName), f.field.fieldName].join('!.')} }}`).join(' , ')
-                    if (relationshipType === 'many-to-one'
-                        || (relationshipType === 'one-to-one' && ownerSide === true)
-                        || (relationshipType === 'many-to-many' && ownerSide === true)) {
                 _%>
                 <dt><span <%= jhiPrefix %>Translate="<%= i18nKeyPrefix %>.<%= relationshipName %>"><%= relationshipNameHumanized %></span></dt>
                 <dd>
@@ -103,10 +102,10 @@
                         <%_ } _%>
                     <%_ } _%>
                 </dd>
-                <%_
-                    }
+            <%_
                 }
-                _%>
+            }
+            _%>
             </dl>
 
             <button type="submit"
@@ -118,7 +117,7 @@
             <%_ if (!readOnly) { _%>
 
             <button type="button"
-                    [routerLink]="['/<%= entityUrl %>', <%= entity.primaryKey.length === 1 ? `${entityInstance}!.${entity.primaryKeyName}` : '{ '+ entity.primaryKey.map(pk => `${pk.name}: ${entityInstance}!.${pk.nameDottedAsserted}`).join(', ') + ' }' %>, 'edit']"
+                    [routerLink]="['/<%= entityUrl %>', <%= entity.primaryKey.ids.length === 1 ? `${entityInstance}!.${entity.primaryKey.name}` : '{ '+ entity.primaryKey.ids.map(pk => `${pk.name}: ${entityInstance}!.${pk.nameDottedAsserted}`).join(', ') + ' }' %>, 'edit']"
                     class="btn btn-primary">
                 <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span <%= jhiPrefix %>Translate="entity.action.edit">Edit</span>
             </button>

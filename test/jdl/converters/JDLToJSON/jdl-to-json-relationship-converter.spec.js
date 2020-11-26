@@ -206,7 +206,7 @@ describe('JDLToJSONRelationshipConverter', () => {
                             ownerSide: true,
                             relationshipName: 'b',
                             relationshipType: 'one-to-one',
-                            useJPADerivedIdentifier: true,
+                            id: true,
                         });
                     });
                 });

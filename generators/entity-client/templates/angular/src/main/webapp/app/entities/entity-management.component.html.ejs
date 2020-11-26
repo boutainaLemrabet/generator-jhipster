@@ -87,7 +87,7 @@
             <tbody<% if (pagination === 'infinite-scroll') { %> infinite-scroll (scrolled)="loadPage(page + 1)" [infiniteScrollDisabled]="page >= links['last']" [infiniteScrollDistance]="0"<% } %>>
                 <tr *ngFor="let <%= entityInstance %> of <%= entityInstancePlural %>; trackBy: trackId" data-cy="entityTable">
                 <%_
-                const keys = primaryKey.length === 1 ? `${entityInstance}!.${primaryKeyName}!` : `{ ${primaryKey.map(pk => `${pk.name}: ${entityInstance}!.${pk.nameDottedAsserted}`).join(', ')} }`;
+                const keys = primaryKey.ids.length === 1 ? `${entityInstance}!.${primaryKey.name}!` : `{ ${primaryKey.ids.map(pk => `${pk.name}: ${entityInstance}!.${pk.nameDottedAsserted}`).join(', ')} }`;
                 const routerLink = ` [routerLink]="['/${ entityUrl }', ${ keys }, 'view']"`;
                 for ([idx, field] of fields.entries()) {
                     const fieldName = fields[idx].fieldName;
@@ -119,23 +119,22 @@
                     <td<% if (field.id) { %>><a<%- routerLink %><% } %>>{{ <%= entityInstance %>.<%= fieldName %> }}<% if (field.id) { %></a><% } %></td>
                     <%_ } _%>
                 <%_ } _%>
-                <%_ for (idx in relationships) {
-                    const relationshipType = relationships[idx].relationshipType;
-                    const ownerSide = relationships[idx].ownerSide;
+            <%_ for (idx in relationships) {
+                const relationshipType = relationships[idx].relationshipType;
+                const ownerSide = relationships[idx].ownerSide;
+                if (relationshipType === 'many-to-one'
+                        || (relationshipType === 'one-to-one' && ownerSide === true)
+                        || (relationshipType === 'many-to-many' && ownerSide === true && pagination === 'no')) {
                     const relationshipFieldName = relationships[idx].relationshipFieldName;
                     const relationshipFieldNamePlural = relationships[idx].relationshipFieldNamePlural;
                     const otherEntityName = relationships[idx].otherEntityName;
                     const otherEntityStateName = relationships[idx].otherEntityStateName;
                     const otherEntity = relationships[idx].otherEntity;
                     const instance = relationshipType === 'many-to-many' ? relationshipFieldName : `${entityInstance}!.${relationshipFieldName}`;
-                    const relationshipKeys = otherEntity.primaryKey.length === 1 ? `${instance}!.${otherEntity.primaryKeyName}!` : `{ ${otherEntity.primaryKey.map(pk => `${pk.name}: ${instance}!.${pk.nameDottedAsserted}`).join(', ')} }`;
+                    const relationshipKeys = otherEntity.primaryKey.ids.length === 1 ? `${instance}!.${otherEntity.primaryKey.name}!` : `{ ${otherEntity.primaryKey.ids.map(pk => `${pk.name}: ${instance}!.${pk.nameDottedAsserted}`).join(', ')} }`;
                     const routerLink = `[routerLink]="['/${ otherEntityStateName }', ${ relationshipKeys }, 'view']"`;
                     const label = relationships[idx].otherEntityFields.map(f => `{{ ${[instance, ...f.usedRelationships.slice(1).map(r2 => r2.relationshipName), f.field.fieldName].join('!.')} }}`).join(' , ')
-                _%>
-                    <%_ if (relationshipType === 'many-to-one'
-                            || (relationshipType === 'one-to-one' && ownerSide === true)
-                            || (relationshipType === 'many-to-many' && ownerSide === true && pagination === 'no')) {
-                    _%>
+            _%>
                     <td>
                         <%_ if (otherEntityName === 'user') { _%>
                             <%_ if (relationshipType === 'many-to-many') { _%>
@@ -159,14 +158,14 @@
                             <%_ } _%>
                         <%_ } _%>
                     </td>
-                    <%_ } _%>
                 <%_ } _%>
+            <%_ } _%>
                     <td class="text-right">
                         <div class="btn-group">
-                            <%_ const idParam = entity.primaryKey.length === 1 ? `${entityInstance}.${entity.primaryKeyName}!` : '{ '+ entity.primaryKey.map(pk => `${pk.name}: ${entityInstance}!.${pk.nameDottedAsserted}`).join(', ') + ' }' _%>
+                            <%_ const idParam = entity.primaryKey.ids.length === 1 ? `${entityInstance}.${entity.primaryKey.name}!` : '{ '+ entity.primaryKey.ids.map(pk => `${pk.name}: ${entityInstance}!.${pk.nameDottedAsserted}`).join(', ') + ' }' _%>
 
                             <button type="submit"
-                                    [routerLink]="['/<%= entityUrl %>',  <%- idParam %>, 'view']"
+                                    [routerLink]="['/<%= entityUrl %>', <%- idParam %>, 'view']"
                                     class="btn btn-info btn-sm"
                                     data-cy="entityDetailsButton">
                                 <fa-icon icon="eye"></fa-icon>

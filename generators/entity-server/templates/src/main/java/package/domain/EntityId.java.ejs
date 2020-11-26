@@ -29,10 +29,10 @@ public class <%= entityClass %>Id implements java.io.Serializable {
 <%_
 // here we lie to the field_validators code because it was coded to expect fields[idx] to contain the validation info
 const realFields = fields;
-fields = primaryKey.map(pk => pk.field);
-for (idx in primaryKey) { _%>
+fields = primaryKey.ids.map(pk => pk.field);
+for (let idx=0; idx< primaryKey.ids.length; idx++) { _%>
 
-    <%_ if (primaryKey[idx].isEnum) { _%>
+    <%_ if (primaryKey.ids[idx].isEnum) { _%>
     @Enumerated(EnumType.STRING)
     <%_ }
     if (fields[idx].fieldValidateRules && fields[idx].fieldValidateRules.includes('required')) {
@@ -50,27 +50,27 @@ for (idx in primaryKey) { _%>
     <%_ if (fieldValidateRules && fieldValidateRules.length > 0) { _%>
     <%- include('../common/field_validators'); -%>
     <%_ } _%>
-    @Column(name = "<%= primaryKey[idx].columnName %>"<% if (primaryKey[idx].fieldValidate === true) { %><% if (primaryKey[idx].fieldValidateRules.includes('maxlength')) { %>, length = <%= primaryKey[idx].fieldValidateRulesMaxlength %><% } %><% if (primaryKey[idx].required) { %>, nullable = false<% } %><% if (primaryKey[idx].unique) { %>, unique = true<% } %><% } %>)
-    private <%= primaryKey[idx].field.fieldType %> <%= primaryKey[idx].name %>;
+    @Column(name = "<%= primaryKey.ids[idx].columnName %>"<% if (primaryKey.ids[idx].fieldValidate === true) { %><% if (primaryKey.ids[idx].fieldValidateRules.includes('maxlength')) { %>, length = <%= primaryKey.ids[idx].fieldValidateRulesMaxlength %><% } %><% if (primaryKey.ids[idx].required) { %>, nullable = false<% } %><% if (primaryKey.ids[idx].unique) { %>, unique = true<% } %><% } %>)
+    private <%= primaryKey.ids[idx].field.fieldType %> <%= primaryKey.ids[idx].name %>;
 <%_ }
 // we put back the real value of fields
 fields = realFields; _%>
 
     public <%= entityClass %>Id(){}
 
-    public <%= entityClass %>Id(<%= primaryKey.map(pk => pk.field.fieldType + ' ' + pk.name).join(', ') %>){
-<%_ for (idx in primaryKey) { _%>
-        this.<%= primaryKey[idx].name %> = <%= primaryKey[idx].name %>;
+    public <%= entityClass %>Id(<%= primaryKey.ids.map(pk => pk.field.fieldType + ' ' + pk.name).join(', ') %>){
+<%_ for (let idx=0; idx< primaryKey.ids.length; idx++) { _%>
+        this.<%= primaryKey.ids[idx].name %> = <%= primaryKey.ids[idx].name %>;
 <%_ }_%>
     }
-<%_ for (idx in primaryKey) { _%>
+<%_ for (let idx=0; idx< primaryKey.ids.length; idx++) { _%>
 
-    public <%= primaryKey[idx].field.fieldType %> <%= primaryKey[idx].getter %>(){
-        return this.<%= primaryKey[idx].name %>;
+    public <%= primaryKey.ids[idx].field.fieldType %> <%= primaryKey.ids[idx].getter %>(){
+        return this.<%= primaryKey.ids[idx].name %>;
     }
 
-    public void <%= primaryKey[idx].setter %>(<%= primaryKey[idx].field.fieldType %> <%= primaryKey[idx].name %>){
-        this.<%= primaryKey[idx].name %> = <%= primaryKey[idx].name %>;
+    public void <%= primaryKey.ids[idx].setter %>(<%= primaryKey.ids[idx].field.fieldType %> <%= primaryKey.ids[idx].name %>){
+        this.<%= primaryKey.ids[idx].name %> = <%= primaryKey.ids[idx].name %>;
     }
 <%_ }_%>
 
@@ -84,21 +84,21 @@ fields = realFields; _%>
         }
 
         <%= entityClass %>Id <%= entityInstance %>Id = (<%= entityClass %>Id) o;
-        return <%- primaryKey.map(f => `Objects.equals(${f.name}, ${entityInstance}Id.${f.name})`).join('\n            && ') %>;
+        return <%- primaryKey.ids.map(f => `Objects.equals(${f.name}, ${entityInstance}Id.${f.name})`).join('\n            && ') %>;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(<%= primaryKey.map(f => f.name).join(', ')%>);
+        return Objects.hash(<%= primaryKey.ids.map(f => f.name).join(', ')%>);
     }
 
     // prettier-ignore
     @Override
     public String toString() {
         return "<%= entityClass %>Id{" +
-            <%_ for (idx in primaryKey) {
-                const isNumeric = ['integer', 'long', 'float', 'double', 'bigdecimal'].includes(primaryKey[idx].field.fieldType.toLowerCase()); _%>
-            ", <%= primaryKey[idx].name %>=<% if (! isNumeric) {%>'<% } %>" + <%= primaryKey[idx].getter %>() <% if (! isNumeric) { %>+ "'" <% } %>+
+            <%_ for (let idx=0; idx< primaryKey.ids.length; idx++) {
+                const isNumeric = ['integer', 'long', 'float', 'double', 'bigdecimal'].includes(primaryKey.ids[idx].field.fieldType.toLowerCase()); _%>
+            ", <%= primaryKey.ids[idx].name %>=<% if (! isNumeric) {%>'<% } %>" + <%= primaryKey.ids[idx].getter %>() <% if (! isNumeric) { %>+ "'" <% } %>+
             <%_ } _%>
             "}";
     }

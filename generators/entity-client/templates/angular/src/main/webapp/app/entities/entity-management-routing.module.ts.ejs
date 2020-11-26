@@ -37,14 +37,14 @@ const <%= entityInstance %>Route: Routes = [
         data: {
             authorities: [Authority.USER],
             <%_ if (pagination !== 'no') { _%>
-            defaultSort: '<% if (primaryKey.length === 1) { %><%= primaryKeyName %>,asc<% } %>',
+            defaultSort: '<% if (primaryKey.ids.length === 1) { %><%= primaryKey.name %>,asc<% } %>',
             <%_ } _%>
             pageTitle: <% if (enableTranslation) { %>'<%= i18nKeyPrefix %>.home.title'<% } else { %>'<%= entityClassPlural %>'<% } %>
         },
         canActivate: [UserRouteAccessService]
     },
     {
-        path: '<% if (primaryKey.length === 1) { %>:<%= primaryKeyName %>/<% } %>view',
+        path: '<% if (primaryKey.ids.length === 1) { %>:<%= primaryKey.name %>/<% } %>view',
         component: <%= entityAngularName %>DetailComponent,
         resolve: {
             <%= entityInstance %>: <%= entityAngularName %>RoutingResolveService
@@ -69,7 +69,7 @@ const <%= entityInstance %>Route: Routes = [
         canActivate: [UserRouteAccessService]
     },
     {
-        path: '<% if (primaryKey.length === 1) { %>:<%= primaryKeyName %>/<% } %>edit',
+        path: '<% if (primaryKey.ids.length === 1) { %>:<%= primaryKey.name %>/<% } %>edit',
         component: <%= entityAngularName %>UpdateComponent,
         resolve: {
             <%= entityInstance %>: <%= entityAngularName %>RoutingResolveService

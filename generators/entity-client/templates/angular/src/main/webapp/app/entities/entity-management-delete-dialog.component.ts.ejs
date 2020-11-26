@@ -34,8 +34,8 @@ export class <%= entityAngularName %>DeleteDialogComponent {
         this.activeModal.dismiss();
     }
 
-    confirmDelete(<%= entity.primaryKey.map(pk => `${pk.name}: ${this.getTypescriptKeyType(pk.field.fieldType)}`).join(', ') %>): void {
-        this.<%= entityInstance %>Service.delete(<%= entity.primaryKey.map(pk => `${pk.name}`).join(', ') %>).subscribe(() => {
+    confirmDelete(<%= entity.primaryKey.ids.map(pk => `${pk.name}: ${this.getTypescriptKeyType(pk.field.fieldType)}`).join(', ') %>): void {
+        this.<%= entityInstance %>Service.delete(<%= entity.primaryKey.ids.map(pk => `${pk.name}`).join(', ') %>).subscribe(() => {
             this.activeModal.close('deleted');
         });
     }

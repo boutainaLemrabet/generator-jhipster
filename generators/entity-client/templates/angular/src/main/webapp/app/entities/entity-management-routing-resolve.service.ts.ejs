@@ -30,11 +30,11 @@ export class <%= entityAngularName %>RoutingResolveService implements Resolve<I<
     constructor(private service: <%= entityAngularName %>Service, private router: Router) {}
 
     resolve(route: ActivatedRouteSnapshot): Observable<I<%= entityAngularName %> | null> | Observable<never> {
-            <%_ entity.primaryKey.forEach(pk => { _%>
+            <%_ entity.primaryKey.ids.forEach(pk => { _%>
                 const <%= pk.name %> = route.params['<%= pk.name %>'] ? route.params['<%= pk.name %>'] : null;
             <%_ }) _%>
-        if (<%- entity.primaryKey.map(pk => pk.name).join(' && ') %>) {
-            return this.service.find(<%- entity.primaryKey.map(pk => pk.name).join(', ') %>).pipe(
+        if (<%- entity.primaryKey.ids.map(pk => pk.name).join(' && ') %>) {
+            return this.service.find(<%- entity.primaryKey.ids.map(pk => pk.name).join(', ') %>).pipe(
                 mergeMap((<%= entityInstance %>: HttpResponse<I<%= entityAngularName %>>) => {
                     if (<%= entityInstance %>.body) {
                         return of(<%= entityInstance %>.body);

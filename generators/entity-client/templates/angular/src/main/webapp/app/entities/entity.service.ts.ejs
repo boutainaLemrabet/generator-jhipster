@@ -74,8 +74,8 @@ export class <%= entityAngularName %>Service {
     }
     <%_ } _%>
 
-    find(<%= entity.primaryKey.map(pk => `${pk.name}: ${this.getTypescriptKeyType(pk.field.fieldType)}`).join(', ') %>): Observable<EntityResponseType> {
-        return this.http.get<I<%= entityAngularName %>>(`${this.resourceUrl}/<%-entity.primaryKey.length === 1 ? '${'+entity.primaryKey[0].name+'}' : entity.primaryKey.map(pk => pk.name+'=${'+pk.name+'}').join(';')%>`, { observe: 'response' })
+    find(<%= entity.primaryKey.ids.map(pk => `${pk.name}: ${this.getTypescriptKeyType(pk.field.fieldType)}`).join(', ') %>): Observable<EntityResponseType> {
+        return this.http.get<I<%= entityAngularName %>>(`${this.resourceUrl}/<%-entity.primaryKey.ids.length === 1 ? '${'+entity.primaryKey.ids[0].name+'}' : entity.primaryKey.ids.map(pk => pk.name+'=${'+pk.name+'}').join(';')%>`, { observe: 'response' })
             <% if (fieldsContainDate) { %>.pipe(map((res: EntityResponseType) => this.convertDateFromServer(res)))<% } %>;
     }
 
@@ -86,8 +86,8 @@ export class <%= entityAngularName %>Service {
     }
 
     <%_ if (!readOnly) { _%>
-    delete(<%= entity.primaryKey.map(pk => `${pk.name}: ${this.getTypescriptKeyType(pk.field.fieldType)}`).join(', ') %>): Observable<HttpResponse<{}>> {
-        return this.http.delete(`${this.resourceUrl}/<%-entity.primaryKey.length === 1 ? '${'+entity.primaryKey[0].name+'}' : entity.primaryKey.map(pk => pk.name+'=${'+pk.name+'}').join(';')%>`, { observe: 'response' });
+    delete(<%= entity.primaryKey.ids.map(pk => `${pk.name}: ${this.getTypescriptKeyType(pk.field.fieldType)}`).join(', ') %>): Observable<HttpResponse<{}>> {
+        return this.http.delete(`${this.resourceUrl}/<%-entity.primaryKey.ids.length === 1 ? '${'+entity.primaryKey.ids[0].name+'}' : entity.primaryKey.ids.map(pk => pk.name+'=${'+pk.name+'}').join(';')%>`, { observe: 'response' });
     }
     <%_ } _%>
 

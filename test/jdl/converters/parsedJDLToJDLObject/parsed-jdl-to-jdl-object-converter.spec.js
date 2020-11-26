@@ -735,8 +735,8 @@ describe('ParsedJDLToJDLObjectConverter', () => {
                     customUnaryOption = jdlObject.getOptionsForName('myCustomUnaryOption')[0];
                     customBinaryOption = jdlObject.getOptionsForName('myCustomBinaryOption')[0];
                     customBinaryOption2 = jdlObject.getOptionsForName('myCustomBinaryOption')[1];
-                    fieldAnnotation = jdlObject.entities.A.fields.name.options.id;
-                    relationshipAnnotation = jdlObject.relationships.getOneToMany('OneToMany_A{b}_B{a}').options.id;
+                    fieldAnnotation = jdlObject.entities.A.fields.name.options.toto;
+                    relationshipAnnotation = jdlObject.relationships.getOneToMany('OneToMany_A{b}_B{a}').options.tata;
                 });
 
                 it('should set the annotations as options', () => {

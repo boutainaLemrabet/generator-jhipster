@@ -68,7 +68,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.primaryKey.length > 1,
+            condition: generator => generator.primaryKey.ids && generator.primaryKey.ids.length > 1,
             path: SERVER_MAIN_SRC_DIR,
             templates: [
                 {

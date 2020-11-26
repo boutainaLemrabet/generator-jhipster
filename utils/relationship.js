@@ -28,7 +28,6 @@ function prepareRelationshipForTemplates(entityWithConfig, relationship, generat
     const jhiTablePrefix = entityWithConfig.jhiTablePrefix || generator.getTableName(entityWithConfig.jhiPrefix);
 
     _.defaults(relationship, {
-        otherEntityFields: [],
         // let ownerSide true when type is 'many-to-one' for convenience.
         // means that this side should control the reference.
         ownerSide:
@@ -44,31 +43,9 @@ function prepareRelationshipForTemplates(entityWithConfig, relationship, generat
 
     relationship.otherEntityIsEmbedded = otherEntityData.embedded;
 
-    relationship.otherEntityPrimaryKeyType = relationship.otherEntity.primaryKeyType;
-    if (!relationship.otherEntityField) {
-        relationship.otherEntityField = relationship.otherEntity.primaryKey.length === 1 ? relationship.otherEntity.primaryKeyName : 'id';
-    }
-    relationship.mapperName = relationship.otherEntityField + (relationship.collection ? 'Set' : '');
+    computeRelationshipOtherEntityFields(relationship);
 
-    // only the case of owner side we need to compute the other otherEntityFields to send them to front end
-    if (relationship.ownerSide) {
-        if (relationship.otherEntityField) {
-            const field = relationship.otherEntity.fields.find(field => field.fieldName === relationship.otherEntityField);
-            if (field) {
-                relationship.otherEntityFields.push({
-                    field,
-                    usedRelationships: [relationship],
-                });
-            }
-        }
-        otherEntityData.relationships
-            .filter(r => r.id) // Only many-to-one (no one-to-one) since otherEntityField is enough in that case
-            .forEach(r =>
-                relationship.otherEntityFields.push(
-                    ...r.otherEntityFields.map(f => ({ field: f.field, usedRelationships: [r, ...f.usedRelationships] }))
-                )
-            );
-    }
+    relationship.mapperName = relationship.otherEntityField + (relationship.collection ? 'Set' : '');
 
     // Look for fields at the other other side of the relationship
     if (otherEntityData.relationships) {
@@ -265,6 +242,32 @@ function prepareRelationshipForTemplates(entityWithConfig, relationship, generat
     return relationship;
 }
 
+function computeRelationshipOtherEntityFields(relationship) {
+    if (!relationship.otherEntityFields) {
+        relationship.otherEntityFields = [];
+        if (!relationship.otherEntityField) {
+            relationship.otherEntityField = relationship.otherEntity.primaryKey.composite ? 'id' : relationship.otherEntity.primaryKey.name;
+        }
+        if (relationship.otherEntityField) {
+            const field = relationship.otherEntity.fields.find(field => field.fieldName === relationship.otherEntityField);
+            if (field) {
+                relationship.otherEntityFields.push({
+                    field,
+                    usedRelationships: [relationship],
+                });
+            }
+        }
+        relationship.otherEntity.relationships
+            .filter(r => r.id) // Only many-to-one (no one-to-one) since otherEntityField is enough in that case
+            .forEach(r => {
+                computeRelationshipOtherEntityFields(r);
+                relationship.otherEntityFields.push(
+                    ...r.otherEntityFields.map(f => ({ field: f.field, usedRelationships: [r, ...f.usedRelationships] }))
+                );
+            });
+    }
+}
+
 function relationshipToReference(entity, relationship, pathPrefix = []) {
     const collection = relationship.relationshipType === 'one-to-many' || relationship.relationshipType === 'many-to-many';
     const name = collection ? relationship.relationshipNamePlural : relationship.relationshipName;
@@ -277,7 +280,8 @@ function relationshipToReference(entity, relationship, pathPrefix = []) {
         doc: relationship.javaDoc,
         name,
         nameCapitalized: collection ? relationship.relationshipNameCapitalizedPlural : relationship.relationshipNameCapitalized,
-        type: relationship.otherEntity.primaryKeyType,
+        // checking if primaryKey exists to avoid problem with embedded, but also diffChangeLog that does not use reference for oldSharedEntities
+        type: relationship.otherEntity.primaryKey ? relationship.otherEntity.primaryKey.type : '',
         path: [...pathPrefix, name],
         idReferences: relationship.otherEntity.idFields ? relationship.otherEntity.idFields.map(field => field.reference) : [],
         valueReference: relationship.otherEntityField && relationship.otherEntityField.reference,

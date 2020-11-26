@@ -55,13 +55,13 @@ describe('Component Tests', () => {
                         provide: ActivatedRoute,
                         useValue: {
                             data: of({
-                                defaultSort: '<% if (primaryKey.length === 1) { %><%= primaryKeyName %>,asc<% } %>',
+                                defaultSort: '<% if (primaryKey.ids.length === 1) { %><%= primaryKey.name %>,asc<% } %>',
                             }),
                             queryParamMap: of(
                                 jest.requireActual('@angular/router').convertToParamMap({
                                     page: '1',
                                     size: '1',
-                                    sort: '<% if (primaryKey.length === 1) { %><%= primaryKeyName %>,desc<% } %>',
+                                    sort: '<% if (primaryKey.ids.length === 1) { %><%= primaryKey.name %>,desc<% } %>',
                                 })
                             ),
                             <%_ if (searchEngine !== false) { _%>
@@ -155,7 +155,7 @@ describe('Component Tests', () => {
             const result = comp.sort();
 
             // THEN
-            expect(result).toEqual([<% if (primaryKey.length === 1) { %>'<%= primaryKeyName %>,asc'<% } %>]);
+            expect(result).toEqual([<% if (primaryKey.ids.length === 1) { %>'<%= primaryKey.name %>,asc'<% } %>]);
         });
 
         it('should calculate the sort attribute for a non-id attribute', () => {
@@ -169,7 +169,7 @@ describe('Component Tests', () => {
             const result = comp.sort();
 
             // THEN
-                expect(result).toEqual(['name,asc', '<%= primaryKeyName %>']);
+                expect(result).toEqual(['name,asc', '<%= primaryKey.name %>']);
         });
 
         <%_ } else { _%>
@@ -180,7 +180,7 @@ describe('Component Tests', () => {
             const result = comp.sort();
 
             // THEN
-            expect(result).toEqual([<% if (primaryKey.length === 1) { %>'<%= primaryKeyName %>,desc'<% } %>]);
+            expect(result).toEqual([<% if (primaryKey.ids.length === 1) { %>'<%= primaryKey.name %>,desc'<% } %>]);
         });
 
         it('should calculate the sort attribute for a non-id attribute', () => {
@@ -189,7 +189,7 @@ describe('Component Tests', () => {
 
             // GIVEN
             comp.predicate = 'name';
-            <%_ if (primaryKey.length > 1) { _%>
+            <%_ if (primaryKey.ids.length > 1) { _%>
             comp.ascending = false;
             <%_ } _%>
 
@@ -197,7 +197,7 @@ describe('Component Tests', () => {
             const result = comp.sort();
 
             // THEN
-            expect(result).toEqual(['name,desc'<% if (primaryKey.length === 1) { %>, '<%= primaryKeyName %>'<% } %>]);
+            expect(result).toEqual(['name,desc'<% if (primaryKey.ids.length === 1) { %>, '<%= primaryKey.name %>'<% } %>]);
         });
 
         <%_ } _%>

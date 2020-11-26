@@ -146,7 +146,7 @@ public class <%= serviceClassName %> extends QueryService<<%= asEntity(entityCla
                 <%_ if (['one-to-one'].includes(relationship.relationshipType)) { _%>
                     <%_ // this should work, without looking through pk and use pkGetter, the same way it does for manyToMany just by comparing entities, for some reason it doesn't _%>
                     <%_ // issue: https://hibernate.atlassian.net/browse/HHH-14341 _%>
-                    <%_ relationship.otherEntity.primaryKey.forEach(pk => {
+                    <%_ relationship.otherEntity.primaryKey.ids.forEach(pk => {
                         const pkGetter = `get(${pk.entity.entityClass}_.${pk.name})` _%>
                             criteriaBuilder.equal(<%= relationship.otherEntityName %>Root.<%= pkGetter %>, root.get(<%= asEntity(entityClass) %>_.<%= relationship.relationshipName %>).<%= pkGetter %>),
                     <%_ }) _%>

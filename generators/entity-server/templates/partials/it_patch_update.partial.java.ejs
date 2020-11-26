@@ -17,7 +17,7 @@
  limitations under the License.
 -%>
 // Initialize the database
-<%_ if (primaryKeyType === 'UUID') { _%>
+<%_ if (primaryKey.type === 'UUID') { _%>
     <%= asEntity(entityInstance) %>.setId(UUID.randomUUID());
 <%_ } _%>
 <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>;
@@ -29,7 +29,7 @@ int databaseSizeBeforeUpdate = <%= entityInstance %>Repository.findAll()<%= call
 <%_ fields.filter(f => f.id).forEach(f => { _%>
 partialUpdated<%= asEntity(entityClass) %>.set<%= f.fieldNameCapitalized %>(<%= asEntity(entityInstance) %>.get<%= f.fieldNameCapitalized %>());
 <%_ }) _%>
-<%_ relationships.filter(r => r.id || r.useJPADerivedIdentifier).forEach(r => { _%>
+<%_ relationships.filter(r => r.id).forEach(r => { _%>
 partialUpdated<%= asEntity(entityClass) %>.set<%= r.relationshipNameCapitalized %>(<%= asEntity(entityInstance) %>.get<%= r.relationshipNameCapitalized %>());
 <%_ }) _%>
 <%_ fieldsToUpdate = patchFields.filter(field => field.includeField) %>

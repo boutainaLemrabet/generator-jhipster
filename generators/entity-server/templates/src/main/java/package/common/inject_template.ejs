@@ -28,7 +28,7 @@
             const mapsIdRepoInstance = `${mapsIdEntityInstance}Repository`;
             beans.push({class: `${mapsIdEntity}Repository`, instance: mapsIdRepoInstance});
         }
-        if (primaryKey.length > 1 && dto === 'mapstruct') {
+        if (primaryKey.ids.length > 1 && dto === 'mapstruct') {
             beans.push({class: `${entityClass}Mapper`, instance: `${entityInstance}Mapper`});
         }
     } else {

@@ -31,8 +31,8 @@ _%>
    Mono<<%= instanceType %>> result = <%= entityInstance %>Service.partialUpdate(<%= instanceName %>);
    <%_ } %>
 <%_ } else { %>
-   <%_ if(primaryKey.length === 1) { _%>
-<%- returnPrefix %> <%= entityInstance %>Repository.findById(<%= instanceName %>.get<%= _.upperFirst(primaryKeyName) %>())
+   <%_ if(primaryKey.ids.length === 1) { _%>
+<%- returnPrefix %> <%= entityInstance %>Repository.findById(<%= instanceName %>.get<%= primaryKey.nameCapitalized %>())
     <%_ } else { _%>
 <%- returnPrefix %> <%= entityInstance %>Repository.findById(<%= entityInstance %>Mapper.toEntity(<%= instanceName %>).getId())
    <%_ } _%>

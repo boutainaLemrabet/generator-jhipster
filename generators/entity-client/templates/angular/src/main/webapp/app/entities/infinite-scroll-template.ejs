@@ -46,7 +46,7 @@
         this.links = {
             last: 0
         };
-        this.predicate = '<% if (primaryKey.length === 1) { %><%= primaryKeyName %><% } %>';
+        this.predicate = '<% if (primaryKey.ids.length === 1) { %><%= primaryKey.name %><% } %>';
         this.ascending = true;
         <%_ if (searchEngine !== false) { _%>
         this.currentSearch = this.activatedRoute.snapshot.queryParams['search'] ?? '';
@@ -116,7 +116,7 @@
             this.predicate = '_score';
             this.ascending = false;
         } else {
-            this.predicate = '<% if (primaryKey.length === 1) { %><%= primaryKeyName %><% } %>';
+            this.predicate = '<% if (primaryKey.ids.length === 1) { %><%= primaryKey.name %><% } %>';
             this.ascending = true;
         }
         this.currentSearch = query;

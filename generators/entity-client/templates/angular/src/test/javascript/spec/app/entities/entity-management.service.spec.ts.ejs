@@ -18,7 +18,7 @@
 -%>
 <%_
 const tsKeyId = generateTestEntityId(primaryKey);
-const variablesWithTypes = generateEntityClientFields(primaryKeyType, fields, relationships, dto, undefined, embedded);
+const variablesWithTypes = generateEntityClientFields(primaryKey.type, fields, relationships, dto, undefined, embedded);
 const enumImports = generateEntityClientEnumImports(fields);
 const testEntity = generateTestEntity(primaryKey);
 _%>
