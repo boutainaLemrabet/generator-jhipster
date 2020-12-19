@@ -142,6 +142,26 @@ public class <%= serviceClassName %> extends QueryService<<%= asEntity(entityCla
             }
             <%_ }); // forEach
         _%>
+
+            if (criteria.getGlobalFilter() != null) {
+                Specification<<%= asEntity(entityClass) %>> orSpecification = Specification.where(null);
+            <%_
+            fields.forEach((field) => {
+            if (isFilterableType(field.fieldType) && getSpecificationBuilder(field.fieldType) === "buildStringSpecification") { _%>
+                orSpecification = orSpecification.or(((root, criteriaQuery, criteriaBuilder) -> criteriaBuilder.like(root.get(<%= asEntity(entityClass) %>_.<%= field.fieldName %>), "%"+ criteria.getGlobalFilter() +"%")));
+            <%_ }
+            }); _%>
+
+            <%_ if (entity.primaryKey.composite) {
+            entity.relationships.filter(r => r.id).forEach(rel => {
+            rel.otherEntity.fields.filter(field => isFilterableType(field.fieldType) && getSpecificationBuilder(field.fieldType) === "buildStringSpecification").forEach(field => { -%>
+                orSpecification = orSpecification.or(((root, criteriaQuery, criteriaBuilder) -> criteriaBuilder.like(root.get(<%= asEntity(entityClass) %>_.<%= rel.relationshipName %>).get(<%= rel.otherEntity.name %>_.<%= field.fieldName %>), "%"+ criteria.getGlobalFilter() +"%")));
+            <%_ })
+            })
+            }
+            _%>
+                specification = specification.and(orSpecification);
+            }
         }
         return specification;
     }
