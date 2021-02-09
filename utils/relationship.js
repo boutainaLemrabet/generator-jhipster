@@ -46,6 +46,8 @@ function prepareRelationshipForTemplates(entityWithConfig, relationship, generat
 
   relationship.otherEntityIsEmbedded = otherEntityData.embedded;
 
+    computeRelationshipOtherEntityFields(relationship);
+
   // Look for fields at the other other side of the relationship
   if (otherEntityData.relationships) {
     let otherRelationship;
@@ -109,25 +111,6 @@ function prepareRelationshipForTemplates(entityWithConfig, relationship, generat
       generator.debug(`Entity ${entityName}: Could not find the other side of the relationship ${stringify(relationship)}`);
     }
     relationship.otherRelationship = otherRelationship;
-  }
-
-  relationship.relatedField = otherEntityData.fields.find(field => field.fieldName === relationship.otherEntityField);
-  if (!relationship.relatedField && !relationship.otherEntity.embedded) {
-    if (otherEntityData.primaryKey && otherEntityData.primaryKey.derived) {
-      Object.defineProperty(relationship, 'relatedField', {
-        get() {
-          const relatedField = otherEntityData.primaryKey.derivedFields.find(field => field.fieldName === relationship.otherEntityField);
-          return relatedField;
-        },
-      });
-    } else if (!ignoreMissingRequiredRelationship) {
-      throw new Error(`Error looking for field ${relationship.otherEntityField} at ${otherEntityData.name}`);
-    }
-  }
-  if (relationship.relatedField) {
-    relationship.otherEntityFieldCapitalized = relationship.relatedField.fieldNameCapitalized;
-  } else {
-    relationship.otherEntityFieldCapitalized = _.upperFirst(relationship.otherEntityField);
   }
 
   if (relationship.otherEntityRelationshipName !== undefined) {
@@ -240,6 +223,32 @@ function prepareRelationshipForTemplates(entityWithConfig, relationship, generat
 
   relationship.reference = relationshipToReference(entityWithConfig, relationship);
   return relationship;
+}
+
+function computeRelationshipOtherEntityFields(relationship) {
+  if (!relationship.otherEntityFields) {
+    relationship.otherEntityFields = [];
+    if (!relationship.otherEntityField) {
+      relationship.otherEntityField = relationship.otherEntity.primaryKey.composite ? 'id' : relationship.otherEntity.primaryKey.name;
+    }
+    if (relationship.otherEntityField) {
+      const field = relationship.otherEntity.fields.find(field => field.fieldName === relationship.otherEntityField);
+      if (field) {
+        relationship.otherEntityFields.push({
+          field,
+          usedRelationships: [relationship],
+        });
+      }
+    }
+    relationship.otherEntity.relationships
+      .filter(r => r.id) // Only many-to-one (no one-to-one) since otherEntityField is enough in that case
+      .forEach(r => {
+        computeRelationshipOtherEntityFields(r);
+        relationship.otherEntityFields.push(
+          ...r.otherEntityFields.map(f => ({ field: f.field, usedRelationships: [r, ...f.usedRelationships] }))
+        );
+      });
+  }
 }
 
 function relationshipToReference(entity, relationship, pathPrefix = []) {
